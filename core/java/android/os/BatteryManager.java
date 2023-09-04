@@ -207,6 +207,13 @@ public class BatteryManager {
      */
     public static final String EXTRA_PLUGGED_RAW = "plugged_raw";
 
+    /**
+     * Extra for {@link android.content.Intent#ACTION_BATTERY_CHANGED}:
+     * boolean value to detect fast charging
+     * {@hide}
+     */
+    public static final String EXTRA_VOOC_CHARGER = "vooc_charger";
+
     /** @hide */
     public static final int BATTERY_PROPERTY_MOD_CHARGE_FULL = 100;
     /** @hide */

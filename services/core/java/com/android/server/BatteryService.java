@@ -78,9 +78,12 @@ import motorola.hardware.health.V1_0.IMotHealth;
 import org.lineageos.internal.notification.LedValues;
 import org.lineageos.internal.notification.LineageBatteryLights;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileDescriptor;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayDeque;
@@ -177,6 +180,10 @@ public final class BatteryService extends SystemService {
 
     private boolean mBatteryLevelLow;
 
+    private boolean mVoocCharger;
+    private boolean mHasVoocCharger;
+    private boolean mLastVoocCharger;
+
     private long mDischargeStartTime;
     private int mDischargeStartLevel;
 
@@ -219,6 +226,9 @@ public final class BatteryService extends SystemService {
         mLed = new Led(context, getLocalService(LightsManager.class));
         mBatteryStats = BatteryStatsService.getService();
         mActivityManagerInternal = LocalServices.getService(ActivityManagerInternal.class);
+
+        mHasVoocCharger = mContext.getResources().getBoolean(
+                com.android.internal.R.bool.config_hasVoocCharger);
 
         mCriticalBatteryLevel = mContext.getResources().getInteger(
                 com.android.internal.R.integer.config_criticalBatteryWarningLevel);
@@ -575,6 +585,8 @@ public final class BatteryService extends SystemService {
         shutdownIfNoPowerLocked();
         shutdownIfOverTempLocked();
 
+        mVoocCharger = mHasVoocCharger && isVoocCharger();
+
         if (force
                 || (mHealthInfo.batteryStatus != mLastBatteryStatus
                         || mHealthInfo.batteryHealth != mLastBatteryHealth
@@ -591,7 +603,8 @@ public final class BatteryService extends SystemService {
                         || mBatteryModProps.modFlag != mLastModFlag
                         || mBatteryModProps.modType != mLastModType
                         || mBatteryModProps.modPowerSource != mLastModPowerSource
-                        || mInvalidCharger != mLastInvalidCharger)) {
+                        || mInvalidCharger != mLastInvalidCharger
+                        || mVoocCharger != mLastVoocCharger)) {
 
             if (mPlugType != mLastPlugType) {
                 if (mLastPlugType == BATTERY_PLUGGED_NONE) {
@@ -765,6 +778,7 @@ public final class BatteryService extends SystemService {
             mLastChargeCounter = mHealthInfo.batteryChargeCounterUah;
             mLastBatteryLevelCritical = mBatteryLevelCritical;
             mLastInvalidCharger = mInvalidCharger;
+            mLastVoocCharger = mVoocCharger;
             mLastModLevel = mBatteryModProps.modLevel;
             mLastModStatus = mBatteryModProps.modStatus;
             mLastModFlag = mBatteryModProps.modFlag;
@@ -801,6 +815,7 @@ public final class BatteryService extends SystemService {
                 BatteryManager.EXTRA_MAX_CHARGING_VOLTAGE,
                 mHealthInfo.maxChargingVoltageMicrovolts);
         intent.putExtra(BatteryManager.EXTRA_CHARGE_COUNTER, mHealthInfo.batteryChargeCounterUah);
+        intent.putExtra(BatteryManager.EXTRA_VOOC_CHARGER, mVoocCharger);
         intent.putExtra(BatteryManager.EXTRA_MOD_LEVEL, mBatteryModProps.modLevel);
         intent.putExtra(BatteryManager.EXTRA_MOD_STATUS, mBatteryModProps.modStatus);
         intent.putExtra(BatteryManager.EXTRA_MOD_FLAG, mBatteryModProps.modFlag);
@@ -859,6 +874,20 @@ public final class BatteryService extends SystemService {
         mContext.sendBroadcastAsUser(intent, UserHandle.ALL,
                 android.Manifest.permission.BATTERY_STATS);
         mLastBatteryLevelChangedSentMs = SystemClock.elapsedRealtime();
+    }
+
+    private boolean isVoocCharger() {
+        try {
+            FileReader file = new FileReader("/sys/class/power_supply/battery/voocchg_ing");
+            BufferedReader br = new BufferedReader(file);
+            String state = br.readLine();
+            br.close();
+            file.close();
+            return "1".equals(state);
+        } catch (FileNotFoundException e) {
+        } catch (IOException e) {
+        }
+        return false;
     }
 
     // TODO: Current code doesn't work since "--unplugged" flag in BSS was purposefully removed.
