@@ -23,6 +23,8 @@ import static android.app.NotificationManager.IMPORTANCE_DEFAULT;
 import static com.android.systemui.statusbar.NotificationEntryHelper.modifyRanking;
 import static com.android.systemui.statusbar.NotificationEntryHelper.modifySbn;
 import static com.android.systemui.statusbar.notification.row.NotificationRowContentBinder.FLAG_CONTENT_VIEW_ALL;
+import static com.android.systemui.statusbar.notification.row.NotificationTestHelper.PKG;
+import static com.android.systemui.statusbar.notification.row.NotificationTestHelper.USER_HANDLE;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -47,6 +49,7 @@ import android.graphics.Color;
 import android.graphics.drawable.AnimatedVectorDrawable;
 import android.graphics.drawable.AnimationDrawable;
 import android.graphics.drawable.Drawable;
+import android.os.UserHandle;
 import android.testing.AndroidTestingRunner;
 import android.testing.TestableLooper;
 import android.testing.TestableLooper.RunWithLooper;
@@ -717,5 +720,17 @@ public class ExpandableNotificationRowTest extends SysuiTestCase {
         when(mockContainer.getAttachedChildren()).thenReturn(rowList);
         parentRow.setChildrenContainer(mockContainer);
         return mockContainer;
+    }
+
+    @Test
+    public void imageResolver_differentNotificationUser_createsUserContext() throws Exception {
+        UserHandle user = new UserHandle(33);
+        Context userContext = new SysuiTestableContext(mContext);
+        mContext.prepareCreateContextAsUser(user, userContext);
+
+        ExpandableNotificationRow row = mNotificationTestHelper.createRow(PKG,
+                user.getUid(1234), user);
+
+        assertThat(row.getImageResolver().getContext()).isSameInstanceAs(userContext);
     }
 }
