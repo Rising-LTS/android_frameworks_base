@@ -72,11 +72,9 @@ import android.content.pm.ActivityInfo;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.hardware.HardwareBuffer;
-import android.hardware.power.Boost;
 import android.os.Binder;
 import android.os.IBinder;
 import android.os.IRemoteCallback;
-import android.os.PowerManagerInternal;
 import android.os.RemoteException;
 import android.os.SystemClock;
 import android.os.Trace;
@@ -98,7 +96,6 @@ import com.android.internal.protolog.common.ProtoLog;
 import com.android.internal.util.function.pooled.PooledLambda;
 import com.android.server.inputmethod.InputMethodManagerInternal;
 import com.android.server.wm.utils.RotationAnimationUtils;
-import com.android.server.LocalServices;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -400,21 +397,11 @@ class Transition implements BLASTSyncEngine.TransactionReadyListener {
             Slog.w(TAG, "Transition already started: " + mSyncId);
         }
         mState = STATE_STARTED;
-        if (mType == TRANSIT_CHANGE) {
-            doActivityBoost();
-        }
         ProtoLog.v(ProtoLogGroup.WM_DEBUG_WINDOW_TRANSITIONS, "Starting Transition %d",
                 mSyncId);
         applyReady();
 
         mController.mTransitionTracer.logState(this);
-    }
-
-    protected void doActivityBoost() {
-        PowerManagerInternal mPowerManagerInternal = LocalServices.getService(PowerManagerInternal.class);
-        if (mPowerManagerInternal != null) {
-            mPowerManagerInternal.setPowerBoost(Boost.DISPLAY_UPDATE_IMMINENT, 80);
-        }
     }
 
     /**
