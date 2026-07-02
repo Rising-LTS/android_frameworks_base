@@ -586,10 +586,6 @@ public class NotificationGutsManager implements NotifGutsViewManager {
         }
 
         final ExpandableNotificationRow row = (ExpandableNotificationRow) view;
-        if (affectedByWorkProfileLock(row)) {
-            return false;
-        }
-
         if (row.isNotificationRowLongClickable()) {
             view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
         }
@@ -649,12 +645,6 @@ public class NotificationGutsManager implements NotifGutsViewManager {
         };
         guts.post(mOpenRunnable);
         return true;
-    }
-
-    boolean affectedByWorkProfileLock(ExpandableNotificationRow row) {
-        int userId = row.getEntry().getSbn().getNormalizedUserId();
-        return mUserManager.isManagedProfile(userId)
-                && mLockscreenUserManager.isLockscreenPublicMode(userId);
     }
 
     /**
