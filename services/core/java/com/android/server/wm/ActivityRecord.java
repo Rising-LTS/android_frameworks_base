@@ -546,8 +546,6 @@ public final class ActivityRecord extends WindowToken implements WindowManagerSe
     public boolean launching;      // is activity launch in progress?
     public boolean translucentWindowLaunch; // a translucent window launch?
     boolean nowVisible;     // is this activity's window visible?
-    public boolean launching;      // is activity launch in progress?
-    public boolean translucentWindowLaunch; // a translucent window launch?
     boolean mClientVisibilityDeferred;// was the visibility change message to client deferred?
     boolean idle;           // has the activity gone idle?
     boolean hasBeenLaunched;// has this activity ever been launched?
